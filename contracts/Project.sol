@@ -42,68 +42,76 @@ contract Project {
   // events
   event CanceledProject(address projectAddress, address projectOwner);
   event Withdraw(address withdrawer, uint amount);
-  event Contributed(address contributor, uint amount, uint availableFunds);
+  event Contributed(address contributor, uint amount, uint mapValue, uint availableFunds);
   
   
   // evaluates the current state and check against the expected state
-  modifier evaluateState(ProjectState expectedState) {
-    if(state == ProjectState.failed || state == ProjectState.successful) {
-      require(state == expectedState);
-    } else {
+  function evaluateState() internal {
+    if(state == ProjectState.ongoing) {
       if(availableFunds >= goal) {
           state = ProjectState.successful;
         } else if(block.timestamp > deadline) {
           state = ProjectState.failed;
         }
-      require(state == expectedState);
     }
-    _;
   }
 
   modifier onlyOwner() {
-    require(msg.sender == owner);
+    require(msg.sender == owner, 'Not the Owner');
     _;
   }
 
   // functions
   function contribute() 
-      external payable evaluateState(ProjectState.ongoing) {
+      external payable {
     // check if the amount is atleast 0.01ETH
     // add to mapping
+    evaluateState();
+    require(state == ProjectState.ongoing, 'Project has ended, cannot contribute');
     require(msg.sender != address(0), "Not valid address");
-    require(msg.value == 0.01 ether, "Minimum contribution amount 0.01 ETH");
+    require(msg.value >= 0.01 ether, "Minimum contribution amount 0.01 ETH");
     contributions[msg.sender] = contributions[msg.sender].add(msg.value);
     availableFunds = availableFunds.add(msg.value);
-    emit Contributed(msg.sender, msg.value, availableFunds);
+    emit Contributed(msg.sender, msg.value, contributions[msg.sender], availableFunds);
   }
 
   
-  function cancelProject() external onlyOwner evaluateState(ProjectState.ongoing) returns(bool){
+  function cancelProject() external onlyOwner returns(bool){
     // change state to failed
+    evaluateState();
+    require(state == ProjectState.ongoing, 'Project has ended, cannot cancel');
     state = ProjectState.failed;
     emit CanceledProject(address(this), owner);
     return true;
   }
 
   // validate endTime has passed and goal has been reached
-  function ownerWithdraw(uint amount) external onlyOwner 
-    evaluateState(ProjectState.successful) returns (bool){
+  function ownerWithdraw(uint percentAmount) external onlyOwner returns (bool){
     // check if the amount is available and let owner withdraw.
-    require(availableFunds >= amount);
+    evaluateState();
+    require(state == ProjectState.successful, 'Project is not successful');
+    require(percentAmount>=0 && percentAmount <=100);
+    uint amount = availableFunds.mul(percentAmount).div(100);
     availableFunds =  availableFunds.sub(amount);
     (bool success, ) = msg.sender.call{value:amount}("");
-    emit Withdraw(msg.sender, amount);
+    if(success) {
+      emit Withdraw(msg.sender, amount);
+    }
     return success;
   }
   
-  function contributerWithdraw() external evaluateState(ProjectState.failed) returns (bool){
+  function contributerWithdraw() external returns (bool){
     // let the caller withdraw the full amount
-    require(contributions[msg.sender]>0);
+    evaluateState();
+    require(state == ProjectState.failed, 'Project has not failed');
+    require(contributions[msg.sender]>0, 'Contributer has no funds');
     uint amount = contributions[msg.sender];
     availableFunds = availableFunds.sub(amount);
     contributions[msg.sender]=0;
     (bool success, ) = msg.sender.call{value:amount}("");
-    emit Withdraw(msg.sender, amount);
+    if(success) {
+      emit Withdraw(msg.sender, amount);
+    }
     return success;
   }
 }
