@@ -95,6 +95,7 @@ contract Project {
     if(success) {
       emit Withdraw(msg.sender, amount);
     }
+    require(success, 'fund trasnfer failed');
     return success;
   }
   
@@ -110,6 +111,7 @@ contract Project {
     if(success) {
       emit Withdraw(msg.sender, amount);
     }
+    require(success, 'fund trasnfer failed');
     return success;
   }
 }
