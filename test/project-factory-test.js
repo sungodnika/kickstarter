@@ -13,7 +13,7 @@ describe("Project Factory Tests", function () {
 
     before(async function() {
         [host, guest1, guest2] = await ethers.getSigners();
-        goal = ethers.utils.parseEther("0.1");
+        goal = ethers.utils.parseEther("1.1");
         projectFactory = await ethers.getContractFactory("ProjectFactory");
 
         deployedProjectFactory = await projectFactory.connect(host).deploy();

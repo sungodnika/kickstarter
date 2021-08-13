@@ -15,7 +15,7 @@ describe("Project Tests", function () {
     
     beforeEach(async function() {
         [host, guest1, guest2] = await ethers.getSigners();
-        goal = ethers.utils.parseEther("0.1");
+        goal = ethers.utils.parseEther("1.1");
         project = await ethers.getContractFactory("Project");
 
         deployedProject = await project.connect(host).deploy(host.getAddress(), goal);

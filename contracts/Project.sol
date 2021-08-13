@@ -28,7 +28,7 @@ contract Project {
   constructor(address _owner, uint _goal) {
     // set deadline and update owner and goal
     require(msg.sender != address(0), "Not valid address");
-    require(_goal > goalMinimum);
+    require(_goal >= goalMinimum, "goal did not reach minimum");
     owner = _owner;
     goal = _goal;
     deadline = block.timestamp + projectDuration;
@@ -95,7 +95,7 @@ contract Project {
     if(success) {
       emit Withdraw(msg.sender, amount);
     }
-    require(success, 'fund trasnfer failed');
+    require(success, 'fund transfer failed');
     return success;
   }
   
@@ -111,7 +111,7 @@ contract Project {
     if(success) {
       emit Withdraw(msg.sender, amount);
     }
-    require(success, 'fund trasnfer failed');
+    require(success, 'fund transfer failed');
     return success;
   }
 }
